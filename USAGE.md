@@ -60,7 +60,7 @@ The interface provides the same search criteria as the Companies House website:
 1. **Fill in your filters** (at least one is required)
    - For example: Set Company Status to "Active" and a date range
 
-2. **Click "🔍 Search & Download CSV"**
+2. **Click " Search & Download CSV"**
 
 3. **Wait for processing** - A loading spinner will show progress
    - The app searches companies matching your criteria

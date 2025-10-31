@@ -4,12 +4,12 @@ A lightweight web application that mirrors Companies House "Advanced Search" fun
 
 ## Features
 
-- ✅ Advanced search filters matching the Companies House website
-- ✅ Exports CSV with company AND director information
-- ✅ Includes: Company Name, Status, Director Names, Addresses, Nationality, Occupation, Role, Dates
-- ✅ Respects Companies House API rate limits (600 requests per 5 minutes)
-- ✅ Clean, modern web interface
-- ✅ No login required - just enter your API key
+- Advanced search filters matching the Companies House website
+- Exports CSV with company AND director information
+- Includes: Company Name, Status, Director Names, Addresses, Nationality, Occupation, Role, Dates
+- Respects Companies House API rate limits (600 requests per 5 minutes)
+- Clean, modern web interface
+- No login required - just enter your API key
 
 ## Prerequisites
 

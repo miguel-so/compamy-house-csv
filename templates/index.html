@@ -171,12 +171,8 @@
 </head>
 <body>
     <div class="container">
-        <h1>🏢 Companies House Advanced Search</h1>
+        <h1>Companies House Advanced Search</h1>
         <p class="subtitle">Search UK companies and export with director details</p>
-        
-        <div class="info-box">
-            <strong>Note:</strong> This tool uses the official Companies House API. Make sure you have set your API key in the environment variable <code>COMPANIES_HOUSE_API_KEY</code>.
-        </div>
         
         <div class="error-message" id="errorMessage"></div>
         
@@ -243,7 +239,7 @@
             </div>
             
             <button type="submit" class="submit-btn" id="submitBtn">
-                🔍 Search & Download CSV
+                 Search & Download CSV
             </button>
             
             <div class="loading" id="loading">
@@ -252,12 +248,6 @@
                 <small>This may take a moment depending on the number of results.</small></p>
             </div>
         </form>
-        
-        <div class="note">
-            <strong>CSV Export includes:</strong> All standard Companies House fields (name, number, status, type, dates, SIC codes, address) <strong>PLUS</strong> Director Name, Director Address, Nationality, Occupation, Role, and appointment dates.
-            <br><br>
-            <strong>Tip:</strong> Use date ranges (e.g., From: 2024-01-01, To: 2024-12-31) combined with Company Status to find companies matching your criteria, just like the Companies House website!
-        </div>
     </div>
     
     <script>
