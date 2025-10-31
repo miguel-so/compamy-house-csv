@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Companies House Advanced Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+        
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .help-text {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 4px;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 40px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+        
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c33;
+            display: none;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+            color: #1565c0;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+            color: #667eea;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .note {
+            background: #fff9e6;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Companies House Advanced Search</h1>
+        <p class="subtitle">Search UK companies and export with director details</p>
+        
+        <div class="info-box">
+            <strong>Note:</strong> This tool uses the official Companies House API. Make sure you have set your API key in the environment variable <code>COMPANIES_HOUSE_API_KEY</code>.
+        </div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <form id="searchForm" method="POST" action="/search">
+            <div class="form-group">
+                <label for="company_name">Company Name (optional)</label>
+                <input type="text" id="company_name" name="company_name" placeholder="e.g., Example Ltd">
+                <span class="help-text">Partial matches are supported</span>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="company_status">Company Status</label>
+                    <select id="company_status" name="company_status">
+                        <option value="">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="dissolved">Dissolved</option>
+                        <option value="liquidation">Liquidation</option>
+                        <option value="receivership">Receivership</option>
+                        <option value="administration">Administration</option>
+                        <option value="voluntary-arrangement">Voluntary Arrangement</option>
+                        <option value="converted-closed">Converted/Closed</option>
+                        <option value="insolvency-proceedings">Insolvency Proceedings</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="company_type">Company Type</label>
+                    <select id="company_type" name="company_type">
+                        <option value="">All Types</option>
+                        <option value="ltd">Private Limited Company (Ltd)</option>
+                        <option value="plc">Public Limited Company (PLC)</option>
+                        <option value="llp">Limited Liability Partnership (LLP)</option>
+                        <option value="cic">Community Interest Company (CIC)</option>
+                    </select>
+                    <span class="help-text">Note: Company type filtering may be limited by API</span>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="incorporated_from">Incorporated From</label>
+                    <input type="date" id="incorporated_from" name="incorporated_from">
+                    <span class="help-text">Start date (YYYY-MM-DD)</span>
+                </div>
+                
+                <div class="form-group">
+                    <label for="incorporated_to">Incorporated To</label>
+                    <input type="date" id="incorporated_to" name="incorporated_to">
+                    <span class="help-text">End date (YYYY-MM-DD)</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="sic_codes">SIC Codes</label>
+                <input type="text" id="sic_codes" name="sic_codes" placeholder="e.g., 62012, 62020">
+                <span class="help-text">Comma-separated SIC codes. Leave empty for all industries.</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="location">Location (optional)</label>
+                <input type="text" id="location" name="location" placeholder="e.g., London, Manchester">
+                <span class="help-text">City or region name</span>
+            </div>
+            
+            <button type="submit" class="submit-btn" id="submitBtn">
+                🔍 Search & Download CSV
+            </button>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Searching companies and fetching director information...<br>
+                <small>This may take a moment depending on the number of results.</small></p>
+            </div>
+        </form>
+        
+        <div class="note">
+            <strong>CSV Export includes:</strong> All standard Companies House fields (name, number, status, type, dates, SIC codes, address) <strong>PLUS</strong> Director Name, Director Address, Nationality, Occupation, Role, and appointment dates.
+            <br><br>
+            <strong>Tip:</strong> Use date ranges (e.g., From: 2024-01-01, To: 2024-12-31) combined with Company Status to find companies matching your criteria, just like the Companies House website!
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('searchForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Validate that at least one filter is provided
+            const companyName = document.getElementById('company_name').value.trim();
+            const companyStatus = document.getElementById('company_status').value;
+            const companyType = document.getElementById('company_type').value;
+            const incorporatedFrom = document.getElementById('incorporated_from').value;
+            const incorporatedTo = document.getElementById('incorporated_to').value;
+            const sicCodes = document.getElementById('sic_codes').value.trim();
+            const location = document.getElementById('location').value.trim();
+            
+            if (!companyName && !companyStatus && !companyType && !incorporatedFrom && !incorporatedTo && !sicCodes && !location) {
+                showError('Please provide at least one search filter.');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            errorMessage.style.display = 'none';
+            
+            // Submit form (will trigger download)
+            const formData = new FormData(form);
+            fetch('/search', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(data => {
+                        throw new Error(data.error || 'An error occurred');
+                    });
+                }
+                
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'companies_export.csv';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1].replace(/['"]/g, '');
+                    }
+                }
+                
+                // Convert response to blob and trigger download
+                return response.blob().then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // Reset form
+                    submitBtn.disabled = false;
+                    loading.style.display = 'none';
+                });
+            })
+            .catch(error => {
+                showError(error.message);
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            });
+        });
+        
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
