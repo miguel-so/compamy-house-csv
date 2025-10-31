@@ -298,13 +298,7 @@ def search():
             # Check if advanced search was attempted
             if any(filters.get(k) for k in ['sic_codes', 'incorporated_from', 'incorporated_to', 'company_status', 'company_type']):
                 error_msg += '\n\n⚠️ IMPORTANT: The Companies House public API does not support advanced search.\n'
-                error_msg += 'The /advanced-search/companies endpoint returns "405 Method Not Allowed".\n\n'
-                error_msg += '✅ WORKAROUND:\n'
-                error_msg += '1. Go to https://find-and-update.company-information.service.gov.uk/advanced-search\n'
-                error_msg += '2. Apply your filters (SIC code, date range, etc.)\n'
-                error_msg += '3. Download the CSV from the website\n'
-                error_msg += '4. This tool can then add director information to that CSV\n\n'
-                error_msg += 'Alternatively, use this tool with "Company Name" filter only (which works with the API).'
+                error_msg += 'The /advanced-search/companies endpoint returns "405 Method Not Allowed".'
             return jsonify({'error': error_msg}), 404
         
         # Create CSV in memory
