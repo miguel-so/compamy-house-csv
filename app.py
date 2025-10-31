@@ -63,30 +63,28 @@ def make_api_request(endpoint: str, params: Optional[Dict] = None, method: str =
     }
     
     try:
-        if method == 'POST' and json_data:
-            # For POST requests, Companies House API expects all data in JSON body
-            # No query parameters for advanced search endpoint
-            print(f"Making POST request to: {url}")
-            print(f"JSON data: {json.dumps(json_data, indent=2)[:500]}...")  # Print first 500 chars
-            response = requests.post(
+        if method == 'GET':
+            print(f"Making GET request to: {url}")
+            if params:
+                print(f"Query parameters: {params}")
+            response = requests.get(
                 url,
                 auth=(API_KEY, ''),
-                json=json_data,
+                params=params,
                 headers=headers,
                 timeout=30
             )
             print(f"Response status: {response.status_code}")
             if response.status_code != 200:
                 print(f"Response text: {response.text[:500]}")
-                # If 405, the advanced search endpoint might not be available
-                if response.status_code == 405:
-                    print("ERROR: Advanced search endpoint returned 405. This endpoint may not be available in the public API.")
-                    return None
         else:
-            response = requests.get(
+            # Fallback for other methods if needed
+            response = requests.request(
+                method,
                 url,
                 auth=(API_KEY, ''),
                 params=params,
+                json=json_data,
                 headers=headers,
                 timeout=30
             )
@@ -166,48 +164,49 @@ def search_companies(filters: Dict) -> List[Dict]:
     start_index = 0
     items_per_page = 100
     
-    # Build pagination parameters (always needed)
+    # Companies House advanced search API uses GET requests with query parameters
+    endpoint = "/advanced-search/companies"
+    
+    # Build query parameters for GET request
+    use_advanced_search = False
     params = {
         'items_per_page': items_per_page,
         'start_index': start_index
     }
     
-    # Companies House advanced search API ONLY accepts POST requests
-    endpoint = "/advanced-search/companies"
-    
-    # Build search body for POST request (required format)
-    search_body = {}
+    # Add search filters as query parameters
     if filters.get('company_name'):
-        search_body['company_name_includes'] = filters['company_name']
+        params['company_name_includes'] = filters['company_name']
+        use_advanced_search = True
     if filters.get('company_status'):
-        search_body['company_status'] = [filters['company_status']]
+        params['company_status'] = filters['company_status']
+        use_advanced_search = True
     if filters.get('company_type'):
-        search_body['company_type'] = [filters['company_type']]
+        params['company_type'] = filters['company_type']
+        use_advanced_search = True
     if filters.get('sic_codes'):
         sic_list = [code.strip() for code in filters['sic_codes'].split(',') if code.strip()]
         if sic_list:
-            search_body['sic_codes'] = sic_list
+            # For GET requests, pass SIC codes as comma-separated string or multiple params
+            params['sic_codes'] = ','.join(sic_list)
+            use_advanced_search = True
     if filters.get('location'):
-        search_body['location'] = filters['location']
+        params['location'] = filters['location']
+        use_advanced_search = True
     if filters.get('incorporated_from'):
-        search_body['incorporated_from'] = filters['incorporated_from']
+        params['incorporated_from'] = filters['incorporated_from']
+        use_advanced_search = True
     if filters.get('incorporated_to'):
-        search_body['incorporated_to'] = filters['incorporated_to']
-    
-    # Advanced search always requires POST - if no advanced filters, use regular search endpoint
-    use_advanced_search = bool(search_body and (filters.get('company_status') or filters.get('company_type') or filters.get('sic_codes') or filters.get('incorporated_from') or filters.get('incorporated_to') or filters.get('location')))
+        params['incorporated_to'] = filters['incorporated_to']
+        use_advanced_search = True
     
     while True:
         if use_advanced_search:
-            # POST request for advanced search (ONLY method accepted)
-            # Companies House API uses 'size' for items per page, not 'items_per_page'
-            full_search_body = search_body.copy()
-            full_search_body['size'] = items_per_page  # API uses 'size' not 'items_per_page'
-            full_search_body['start_index'] = start_index
-            
-            print(f"POST request body: {json.dumps(full_search_body, indent=2)}")
-            print(f"POST request URL: {API_BASE_URL}{endpoint}")
-            data = make_api_request(endpoint, None, method='POST', json_data=full_search_body)
+            # GET request for advanced search
+            params['start_index'] = start_index
+            print(f"GET request URL: {API_BASE_URL}{endpoint}")
+            print(f"GET request params: {params}")
+            data = make_api_request(endpoint, params, method='GET')
         elif filters.get('company_name'):
             # Use regular search endpoint for simple name-only searches
             endpoint = "/search/companies"
@@ -221,15 +220,9 @@ def search_companies(filters: Dict) -> List[Dict]:
             # No valid filters
             break
         
-        # If advanced search fails (405 error), it means the endpoint doesn't exist or isn't available
-        # The Companies House public API may not have advanced search - return error with helpful message
+        # If advanced search fails, return empty list
         if not data and use_advanced_search:
-            print("\n❌ ERROR: Advanced search endpoint is not available in the Companies House public API.")
-            print("The /advanced-search/companies endpoint returns 405 Method Not Allowed.")
-            print("\nPossible solutions:")
-            print("1. The advanced search may require a different API version or subscription")
-            print("2. Try using the regular search with company name only")
-            print("3. Check Companies House API documentation for the correct endpoint")
+            print("\n❌ ERROR: Advanced search request failed.")
             return []  # Return empty list so user sees error message
         
         if not data or 'items' not in data:
