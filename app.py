@@ -324,14 +324,24 @@ def search():
         total_companies = len(companies)
         for idx, company in enumerate(companies):
             company_number = company.get('company_number', '')
-            company_name = company.get('company_name', '')
-            company_status = company.get('company_status', '')
+            # Try multiple possible field names for company name
+            company_name = (company.get('company_name') or 
+                           company.get('title') or 
+                           company.get('name') or 
+                           '').strip()
+            company_status = (company.get('company_status', '') or 
+                             company.get('status', '')).strip()
             company_type = company.get('company_type', '')
             company_subtype = company.get('company_subtype', '')
             dissolution_date = company.get('date_of_cessation', '') or company.get('dissolution_date', '')
             incorporation_date = company.get('date_of_creation', '') or company.get('incorporation_date', '')
             removed_date = company.get('removed_date', '')
             registered_date = company.get('registered_date', '')
+            
+            # Filter: Only include ACTIVE companies (case-insensitive)
+            # Skip companies that are not explicitly ACTIVE (including empty status)
+            if not company_status or company_status.upper() != 'ACTIVE':
+                continue  # Skip non-active companies
             
             # Get SIC codes - can be in different formats
             sic_codes_list = company.get('sic_codes', [])
